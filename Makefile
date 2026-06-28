@@ -12,26 +12,17 @@ TOPDIR ?= $(CURDIR)
 include $(DEVKITARM)/3ds_rules
 
 #---------------------------------------------------------------------------------
-# TARGET   : nom du binaire final (Space.3dsx)
-# BUILD    : dossier de build temporaire
-# SOURCES  : dossiers contenant le code source
-# DATA     : dossiers contenant des données brutes
-# INCLUDES : dossiers contenant les headers
-# ROMFS    : dossier monté en romfs: (optionnel, ici vide mais prêt si besoin d'assets)
-#---------------------------------------------------------------------------------
 TARGET     := Space
 BUILD      := build
 SOURCES    := source
 DATA       := data
 INCLUDES   := source
-ROMFS      := romfs
+ROMFS      :=
 
-APP_TITLE       := Space
-APP_DESCRIPTION := Exploration spatiale minimaliste
-APP_AUTHOR      := Baptiste
+export APP_TITLE       := Space
+export APP_DESCRIPTION := Exploration spatiale minimaliste
+export APP_AUTHOR      := Baptiste
 
-#---------------------------------------------------------------------------------
-# Options de compilation
 #---------------------------------------------------------------------------------
 ARCH    := -march=armv6k -mtune=mpcore -mfloat-abi=hard -mtp=soft
 
@@ -50,12 +41,8 @@ LDFLAGS  = -specs=3dsx.specs -g $(ARCH_LINK) -Wl,-Map,$(notdir $*.map)
 LIBS     := -lcitro2d -lcitro3d -lctru -lm
 
 #---------------------------------------------------------------------------------
-# Chemins des librairies (devkitPro standard)
-#---------------------------------------------------------------------------------
 LIBDIRS  := $(CTRULIB) $(PORTLIBS)
 
-#---------------------------------------------------------------------------------
-# Ne pas modifier en dessous (boilerplate devkitARM standard)
 #---------------------------------------------------------------------------------
 ifneq ($(BUILD),$(notdir $(CURDIR)))
 #---------------------------------------------------------------------------------
@@ -91,7 +78,9 @@ export INCLUDE := $(foreach dir,$(INCLUDES),-I$(CURDIR)/$(dir)) \
 
 export LIBPATHS := $(foreach dir,$(LIBDIRS),-L$(dir)/lib)
 
-ifeq ($(strip $(ROMFS)),)
+export _3DSXFLAGS += --smdh=$(CURDIR)/$(TARGET).smdh
+
+ifneq ($(strip $(ROMFS)),)
 	export _3DSXFLAGS += --romfs=$(CURDIR)/$(ROMFS)
 endif
 
@@ -116,7 +105,7 @@ DEPENDS := $(OFILES:.o=.d)
 
 all : $(OUTPUT).3dsx
 
-$(OUTPUT).3dsx : $(OUTPUT).elf $(_3DSXDEPS)
+$(OUTPUT).3dsx : $(OUTPUT).elf $(OUTPUT).smdh
 $(OUTPUT).elf  : $(OFILES)
 
 -include $(DEPENDS)
