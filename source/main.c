@@ -12,14 +12,6 @@
 #include "bottomscreen.h"
 #include "autopilot.h"
 
-// ---------------------------------------------------------------
-// main.c — Space
-// Boucle principale du jeu : initialise libctru/citro2d/citro3d,
-// configure les deux écrans (haut = jeu + HUD, bas = mini-map /
-// réglages), lit les entrées (Circle Pad + D-Pad + tactile + Y
-// pour le pilote auto), met à jour la simulation et dessine.
-// ---------------------------------------------------------------
-
 int main(int argc, char** argv) {
     (void)argc; (void)argv;
 
@@ -33,7 +25,6 @@ int main(int argc, char** argv) {
 
     srand((unsigned)svcGetSystemTick());
 
-    // --- Init état du jeu ---
     g_state.frameCount = 0;
     g_state.camX = 0.0f;
     g_state.camY = 0.0f;
@@ -61,23 +52,20 @@ int main(int argc, char** argv) {
 
         if (kDown & KEY_START) break;
 
-        // Touche Y bascule le pilote automatique
         bool yHeld = (kHeld & KEY_Y) != 0;
         if (yHeld && !prevY) {
             g_state.autoPilotOn = !g_state.autoPilotOn;
         }
         prevY = yHeld;
 
-        // Tactile : mini-map / menu réglages
         touchPosition touch;
         hidTouchRead(&touch);
         bool touchHeld = (kHeld & KEY_TOUCH) != 0;
         bool touchDown = (kDown & KEY_TOUCH) != 0;
         bottomscreen_handle_touch(touch, touchHeld, touchDown);
 
-        float dt = 1.0f / 60.0f; // la 3DS tourne à 60 FPS (3D off) de façon stable, dt fixe suffisant
+        float dt = 1.0f / 60.0f;
 
-        // Si le pilote auto est actif, on remplace l'entrée Circle Pad par une entrée simulée
         circlePosition effectiveCpad = cpad;
         if (g_state.autoPilotOn) {
             effectiveCpad = autopilot_compute_input();
@@ -85,14 +73,14 @@ int main(int argc, char** argv) {
 
         ship_update(dt, effectiveCpad, g_state.autoPilotOn ? 0 : kHeld);
 
-        // Caméra suit le vaisseau
         g_state.camX = g_state.ship.worldX;
         g_state.camY = g_state.ship.worldY;
 
         float speed = vecLength(g_state.ship.vx, g_state.ship.vy);
         starfield_update(dt, speed);
 
-        // --- Rendu écran du HAUT : jeu + HUD ---
+        C3D_FrameBegin(C3D_FRAME_SYNCDRAW);
+
         C2D_TargetClear(topScreen, 0xFF000000);
         C2D_SceneBegin(topScreen);
 
@@ -101,7 +89,6 @@ int main(int argc, char** argv) {
         ship_render();
         hud_render(hudTextBuf);
 
-        // --- Rendu écran du BAS : mini-map ou réglages ---
         C2D_TargetClear(botScreen, 0xFF000000);
         C2D_SceneBegin(botScreen);
         bottomscreen_render(botTextBuf);
